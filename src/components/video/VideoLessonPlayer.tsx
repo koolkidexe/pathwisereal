@@ -55,29 +55,18 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel]);
 
-  // Play audio for current slide
+  // Browser TTS narration for current slide
   useEffect(() => {
     if (!isPlaying || !script) return;
 
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+    window.speechSynthesis.cancel();
 
-    const audioUrl = audioUrls[currentSlide];
-    if (audioUrl && !muted) {
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      audio.play().catch(() => {});
-      audio.onended = () => {
-        if (currentSlide < script.slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          setIsPlaying(false);
-        }
-      };
-    } else if (!muted && script.slides[currentSlide] && 'speechSynthesis' in window) {
-      // Browser TTS fallback
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(script.slides[currentSlide].narration);
+    const slide = script.slides[currentSlide];
+    if (!muted && slide && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(slide.narration);
       utterance.rate = 1.0;
+      utterance.pitch = 1.0;
       utterance.onend = () => {
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
@@ -87,7 +76,6 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       };
       window.speechSynthesis.speak(utterance);
     } else {
-      // No audio: auto-advance after 5 seconds
       autoAdvanceRef.current = setTimeout(() => {
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
@@ -98,10 +86,10 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
 
     return () => {
-      audioRef.current?.pause();
+      window.speechSynthesis.cancel();
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
-  }, [isPlaying, currentSlide, audioUrls, muted, script]);
+  }, [isPlaying, currentSlide, muted, script]);
 
   const togglePlay = () => {
     if (!script) return;
