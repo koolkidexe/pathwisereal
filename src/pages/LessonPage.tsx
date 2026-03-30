@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SAMPLE_TOPICS, Question } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, HelpCircle, Lightbulb, BookOpen, Brain } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, HelpCircle, Lightbulb, BookOpen, Brain, Video } from "lucide-react";
 import { UserProfile } from "@/lib/store";
+import { VideoLessonPlayer } from "@/components/video/VideoLessonPlayer";
+import { SUBJECTS } from "@/lib/constants";
 
 interface LessonProps {
   profile: UserProfile;
