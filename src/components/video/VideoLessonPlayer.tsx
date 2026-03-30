@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader2, Video, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateLessonScript, generateNarration, LessonScript, LessonSlide } from "@/lib/ai-lesson";
+import { generateLessonScript, LessonScript, LessonSlide } from "@/lib/ai-lesson";
 import { toast } from "@/hooks/use-toast";
 
 interface VideoLessonPlayerProps {
@@ -30,49 +30,22 @@ const VISUAL_COLORS: Record<string, string> = {
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
   const [script, setScript] = useState<LessonScript | null>(null);
   const [loading, setLoading] = useState(false);
-  const [generatingAudio, setGeneratingAudio] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [audioUrls, setAudioUrls] = useState<(string | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateVideo = useCallback(async () => {
     setLoading(true);
     setError(null);
     setCurrentSlide(0);
-    setAudioUrls([]);
     setScript(null);
 
     try {
       // Step 1: Generate script
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
-
-      // Step 2: Try generating audio via ElevenLabs, fallback to browser TTS
-      setGeneratingAudio(true);
-      const urls: (string | null)[] = [];
-      let ttsAvailable = true;
-      for (const slide of lessonScript.slides) {
-        if (ttsAvailable) {
-          try {
-            const audioBase64 = await generateNarration(slide.narration);
-            urls.push(`data:audio/mpeg;base64,${audioBase64}`);
-          } catch {
-            ttsAvailable = false;
-            urls.push(null);
-          }
-        } else {
-          urls.push(null);
-        }
-      }
-      if (!ttsAvailable) {
-        toast({ title: "Using browser narration", description: "AI voice unavailable — using built-in speech instead.", variant: "default" });
-      }
-      setAudioUrls(urls);
-      setGeneratingAudio(false);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to generate video lesson";
       setError(msg);
@@ -82,29 +55,18 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel]);
 
-  // Play audio for current slide
+  // Browser TTS narration for current slide
   useEffect(() => {
     if (!isPlaying || !script) return;
 
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+    window.speechSynthesis.cancel();
 
-    const audioUrl = audioUrls[currentSlide];
-    if (audioUrl && !muted) {
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      audio.play().catch(() => {});
-      audio.onended = () => {
-        if (currentSlide < script.slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          setIsPlaying(false);
-        }
-      };
-    } else if (!muted && script.slides[currentSlide] && 'speechSynthesis' in window) {
-      // Browser TTS fallback
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(script.slides[currentSlide].narration);
+    const slide = script.slides[currentSlide];
+    if (!muted && slide && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(slide.narration);
       utterance.rate = 1.0;
+      utterance.pitch = 1.0;
       utterance.onend = () => {
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
@@ -114,7 +76,6 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       };
       window.speechSynthesis.speak(utterance);
     } else {
-      // No audio: auto-advance after 5 seconds
       autoAdvanceRef.current = setTimeout(() => {
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
@@ -125,27 +86,27 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
 
     return () => {
-      audioRef.current?.pause();
+      window.speechSynthesis.cancel();
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
-  }, [isPlaying, currentSlide, audioUrls, muted, script]);
+  }, [isPlaying, currentSlide, muted, script]);
 
   const togglePlay = () => {
     if (!script) return;
     if (isPlaying) {
-      audioRef.current?.pause();
+      window.speechSynthesis.cancel();
     }
     setIsPlaying(!isPlaying);
   };
 
   const nextSlide = () => {
     if (!script) return;
-    audioRef.current?.pause();
+    window.speechSynthesis.cancel();
     if (currentSlide < script.slides.length - 1) setCurrentSlide(prev => prev + 1);
   };
 
   const prevSlide = () => {
-    audioRef.current?.pause();
+    window.speechSynthesis.cancel();
     if (currentSlide > 0) setCurrentSlide(prev => prev - 1);
   };
 
@@ -173,7 +134,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-8 text-center space-y-4">
         <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
-        <h3 className="font-display font-semibold">{generatingAudio ? "Generating narration..." : "Creating lesson script..."}</h3>
+        <h3 className="font-display font-semibold">Creating lesson script...</h3>
         <p className="text-sm text-muted-foreground">This may take a moment</p>
         <div className="flex justify-center gap-1">
           {[0, 1, 2].map(i => (
