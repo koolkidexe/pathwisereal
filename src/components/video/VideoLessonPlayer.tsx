@@ -46,29 +46,6 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       // Step 1: Generate script
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
-
-      // Step 2: Try generating audio via ElevenLabs, fallback to browser TTS
-      setGeneratingAudio(true);
-      const urls: (string | null)[] = [];
-      let ttsAvailable = true;
-      for (const slide of lessonScript.slides) {
-        if (ttsAvailable) {
-          try {
-            const audioBase64 = await generateNarration(slide.narration);
-            urls.push(`data:audio/mpeg;base64,${audioBase64}`);
-          } catch {
-            ttsAvailable = false;
-            urls.push(null);
-          }
-        } else {
-          urls.push(null);
-        }
-      }
-      if (!ttsAvailable) {
-        toast({ title: "Using browser narration", description: "AI voice unavailable — using built-in speech instead.", variant: "default" });
-      }
-      setAudioUrls(urls);
-      setGeneratingAudio(false);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to generate video lesson";
       setError(msg);
