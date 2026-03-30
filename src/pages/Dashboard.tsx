@@ -90,7 +90,7 @@ export default function Dashboard({ profile }: DashboardProps) {
                   Learn the fundamentals of variables and equations
                 </p>
               </div>
-              <Button size="icon" className="shrink-0 glow-primary-sm">
+              <Button size="icon" className="shrink-0 glow-primary-sm" onClick={() => navigate("/lesson/l1")}>
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
