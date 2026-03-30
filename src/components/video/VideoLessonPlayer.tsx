@@ -94,13 +94,25 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       audioRef.current = audio;
       audio.play().catch(() => {});
       audio.onended = () => {
-        // Auto-advance to next slide
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
         } else {
           setIsPlaying(false);
         }
       };
+    } else if (!muted && script.slides[currentSlide] && 'speechSynthesis' in window) {
+      // Browser TTS fallback
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(script.slides[currentSlide].narration);
+      utterance.rate = 1.0;
+      utterance.onend = () => {
+        if (currentSlide < script.slides.length - 1) {
+          setCurrentSlide(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      };
+      window.speechSynthesis.speak(utterance);
     } else {
       // No audio: auto-advance after 5 seconds
       autoAdvanceRef.current = setTimeout(() => {
