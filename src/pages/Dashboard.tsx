@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Play, Map, BookOpen, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { XPBar } from "@/components/dashboard/XPBar";
 import { DailyMissions } from "@/components/dashboard/DailyMissions";
 import { UserProfile } from "@/lib/store";
