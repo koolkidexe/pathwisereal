@@ -51,16 +51,25 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
 
-      // Step 2: Generate audio for all slides
+      // Step 2: Try generating audio via ElevenLabs, fallback to browser TTS
       setGeneratingAudio(true);
       const urls: (string | null)[] = [];
+      let ttsAvailable = true;
       for (const slide of lessonScript.slides) {
-        try {
-          const audioBase64 = await generateNarration(slide.narration);
-          urls.push(`data:audio/mpeg;base64,${audioBase64}`);
-        } catch {
-          urls.push(null); // Skip audio for this slide if TTS fails
+        if (ttsAvailable) {
+          try {
+            const audioBase64 = await generateNarration(slide.narration);
+            urls.push(`data:audio/mpeg;base64,${audioBase64}`);
+          } catch {
+            ttsAvailable = false;
+            urls.push(null);
+          }
+        } else {
+          urls.push(null);
         }
+      }
+      if (!ttsAvailable) {
+        toast({ title: "Using browser narration", description: "AI voice unavailable — using built-in speech instead.", variant: "default" });
       }
       setAudioUrls(urls);
       setGeneratingAudio(false);
@@ -85,13 +94,25 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       audioRef.current = audio;
       audio.play().catch(() => {});
       audio.onended = () => {
-        // Auto-advance to next slide
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
         } else {
           setIsPlaying(false);
         }
       };
+    } else if (!muted && script.slides[currentSlide] && 'speechSynthesis' in window) {
+      // Browser TTS fallback
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(script.slides[currentSlide].narration);
+      utterance.rate = 1.0;
+      utterance.onend = () => {
+        if (currentSlide < script.slides.length - 1) {
+          setCurrentSlide(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      };
+      window.speechSynthesis.speak(utterance);
     } else {
       // No audio: auto-advance after 5 seconds
       autoAdvanceRef.current = setTimeout(() => {
