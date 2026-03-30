@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Play, Map, BookOpen, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { XPBar } from "@/components/dashboard/XPBar";
 import { DailyMissions } from "@/components/dashboard/DailyMissions";
 import { UserProfile } from "@/lib/store";
@@ -52,7 +52,7 @@ export default function Dashboard({ profile }: DashboardProps) {
         <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Button
             className="h-14 text-base font-semibold glow-primary-sm gap-2"
-            onClick={() => {}}
+            onClick={() => navigate("/lesson/l1")}
           >
             <Play className="w-5 h-5" />
             Resume Learning
@@ -60,7 +60,7 @@ export default function Dashboard({ profile }: DashboardProps) {
           <Button
             variant="outline"
             className="h-14 text-base font-medium gap-2 glass-hover"
-            onClick={() => {}}
+            onClick={() => navigate("/study-plan")}
           >
             <Map className="w-5 h-5" />
             View Study Plan
@@ -68,7 +68,7 @@ export default function Dashboard({ profile }: DashboardProps) {
           <Button
             variant="outline"
             className="h-14 text-base font-medium gap-2 glass-hover"
-            onClick={() => {}}
+            onClick={() => navigate("/material")}
           >
             <BookOpen className="w-5 h-5" />
             All Material
@@ -90,7 +90,7 @@ export default function Dashboard({ profile }: DashboardProps) {
                   Learn the fundamentals of variables and equations
                 </p>
               </div>
-              <Button size="icon" className="shrink-0 glow-primary-sm">
+              <Button size="icon" className="shrink-0 glow-primary-sm" onClick={() => navigate("/lesson/l1")}>
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
