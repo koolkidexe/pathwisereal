@@ -25,12 +25,12 @@ export default function LessonPage({ profile, updateProfile }: LessonProps) {
   const [stuckMode, setStuckMode] = useState(false);
   const [stuckStep, setStuckStep] = useState(0);
 
-  // Find lesson
   let lesson = null;
+  let lessonSubject = "";
   for (const topic of SAMPLE_TOPICS) {
     for (const st of topic.subtopics) {
       const found = st.lessons.find(l => l.id === lessonId);
-      if (found) { lesson = found; break; }
+      if (found) { lesson = found; lessonSubject = topic.subject; break; }
     }
     if (lesson) break;
   }
