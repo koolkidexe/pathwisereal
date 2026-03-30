@@ -134,7 +134,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-8 text-center space-y-4">
         <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
-        <h3 className="font-display font-semibold">{generatingAudio ? "Generating narration..." : "Creating lesson script..."}</h3>
+        <h3 className="font-display font-semibold">Creating lesson script...</h3>
         <p className="text-sm text-muted-foreground">This may take a moment</p>
         <div className="flex justify-center gap-1">
           {[0, 1, 2].map(i => (
