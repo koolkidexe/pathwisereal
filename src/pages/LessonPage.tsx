@@ -16,7 +16,7 @@ interface LessonProps {
 export default function LessonPage({ profile, updateProfile }: LessonProps) {
   const { lessonId } = useParams();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"learn" | "practice">("learn");
+  const [tab, setTab] = useState<"learn" | "video" | "practice">("learn");
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
