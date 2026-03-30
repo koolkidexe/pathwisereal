@@ -101,12 +101,12 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
 
   const nextSlide = () => {
     if (!script) return;
-    audioRef.current?.pause();
+    window.speechSynthesis.cancel();
     if (currentSlide < script.slides.length - 1) setCurrentSlide(prev => prev + 1);
   };
 
   const prevSlide = () => {
-    audioRef.current?.pause();
+    window.speechSynthesis.cancel();
     if (currentSlide > 0) setCurrentSlide(prev => prev - 1);
   };
 
