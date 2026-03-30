@@ -40,7 +40,6 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     setLoading(true);
     setError(null);
     setCurrentSlide(0);
-    setAudioUrls([]);
     setScript(null);
 
     try {
