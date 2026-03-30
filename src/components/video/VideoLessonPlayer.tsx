@@ -94,7 +94,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
   const togglePlay = () => {
     if (!script) return;
     if (isPlaying) {
-      audioRef.current?.pause();
+      window.speechSynthesis.cancel();
     }
     setIsPlaying(!isPlaying);
   };
