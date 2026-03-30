@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader2, Video, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateLessonScript, generateNarration, LessonScript, LessonSlide } from "@/lib/ai-lesson";
+import { generateLessonScript, LessonScript, LessonSlide } from "@/lib/ai-lesson";
 import { toast } from "@/hooks/use-toast";
 
 interface VideoLessonPlayerProps {
