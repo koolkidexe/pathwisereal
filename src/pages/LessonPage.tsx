@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SAMPLE_TOPICS, Question } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, HelpCircle, Lightbulb, BookOpen, Brain } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, HelpCircle, Lightbulb, BookOpen, Brain, Video } from "lucide-react";
 import { UserProfile } from "@/lib/store";
+import { VideoLessonPlayer } from "@/components/video/VideoLessonPlayer";
+import { SUBJECTS } from "@/lib/constants";
 
 interface LessonProps {
   profile: UserProfile;
@@ -14,7 +16,7 @@ interface LessonProps {
 export default function LessonPage({ profile, updateProfile }: LessonProps) {
   const { lessonId } = useParams();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"learn" | "practice">("learn");
+  const [tab, setTab] = useState<"learn" | "video" | "practice">("learn");
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -23,12 +25,12 @@ export default function LessonPage({ profile, updateProfile }: LessonProps) {
   const [stuckMode, setStuckMode] = useState(false);
   const [stuckStep, setStuckStep] = useState(0);
 
-  // Find lesson
   let lesson = null;
+  let lessonSubject = "";
   for (const topic of SAMPLE_TOPICS) {
     for (const st of topic.subtopics) {
       const found = st.lessons.find(l => l.id === lessonId);
-      if (found) { lesson = found; break; }
+      if (found) { lesson = found; lessonSubject = topic.subject; break; }
     }
     if (lesson) break;
   }
@@ -116,8 +118,8 @@ export default function LessonPage({ profile, updateProfile }: LessonProps) {
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-lg bg-muted/30">
-          {[{ key: "learn" as const, label: "Learn", icon: BookOpen }, { key: "practice" as const, label: "Practice", icon: Brain }].map(t => (
-            <button key={t.key} onClick={() => { setTab(t.key); setPracticeComplete(false); setCurrentQIndex(0); setSelected(null); setShowExplanation(false); setScore(0); }} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-all ${tab === t.key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          {[{ key: "learn" as const, label: "Learn", icon: BookOpen }, { key: "video" as const, label: "Video", icon: Video }, { key: "practice" as const, label: "Practice", icon: Brain }].map(t => (
+            <button key={t.key} onClick={() => { setTab(t.key); if (t.key === "practice") { setPracticeComplete(false); setCurrentQIndex(0); setSelected(null); setShowExplanation(false); setScore(0); } }} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-all ${tab === t.key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               <t.icon className="w-4 h-4" />{t.label}{t.key === "practice" && questions.length > 0 && <span className="text-xs opacity-70">({questions.length})</span>}
             </button>
           ))}
@@ -127,14 +129,22 @@ export default function LessonPage({ profile, updateProfile }: LessonProps) {
         {tab === "learn" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-6 md:p-8">
             {renderMarkdown(lesson.content)}
-            {questions.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-border/50">
+            <div className="mt-8 pt-6 border-t border-border/50 flex gap-3">
+              <Button variant="outline" onClick={() => setTab("video")} className="glass-hover">
+                <Video className="w-4 h-4 mr-2" /> Watch Video
+              </Button>
+              {questions.length > 0 && (
                 <Button onClick={() => setTab("practice")} className="glow-primary-sm">
                   <Brain className="w-4 h-4 mr-2" /> Practice Questions <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
+        )}
+
+        {/* Video Tab */}
+        {tab === "video" && (
+          <VideoLessonPlayer topic={lesson.title} subject={SUBJECTS.find(s => s.value === lessonSubject)?.label || lessonSubject} gradeLevel={profile.gradeLevel} />
         )}
 
         {/* Practice Tab */}
