@@ -52,7 +52,7 @@ export default function Dashboard({ profile }: DashboardProps) {
         <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Button
             className="h-14 text-base font-semibold glow-primary-sm gap-2"
-            onClick={() => {}}
+            onClick={() => navigate("/lesson/l1")}
           >
             <Play className="w-5 h-5" />
             Resume Learning
@@ -60,7 +60,7 @@ export default function Dashboard({ profile }: DashboardProps) {
           <Button
             variant="outline"
             className="h-14 text-base font-medium gap-2 glass-hover"
-            onClick={() => {}}
+            onClick={() => navigate("/study-plan")}
           >
             <Map className="w-5 h-5" />
             View Study Plan
@@ -68,7 +68,7 @@ export default function Dashboard({ profile }: DashboardProps) {
           <Button
             variant="outline"
             className="h-14 text-base font-medium gap-2 glass-hover"
-            onClick={() => {}}
+            onClick={() => navigate("/material")}
           >
             <BookOpen className="w-5 h-5" />
             All Material
