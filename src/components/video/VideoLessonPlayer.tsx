@@ -30,13 +30,10 @@ const VISUAL_COLORS: Record<string, string> = {
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
   const [script, setScript] = useState<LessonScript | null>(null);
   const [loading, setLoading] = useState(false);
-  const [generatingAudio, setGeneratingAudio] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [audioUrls, setAudioUrls] = useState<(string | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateVideo = useCallback(async () => {
