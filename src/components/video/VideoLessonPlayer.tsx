@@ -27,7 +27,7 @@ const VISUAL_COLORS: Record<string, string> = {
   summary: "from-xp/15 to-primary/15",
 };
 
-async function fetchTTSAudio(text: string, maxRetries = 10): Promise<string> {
+async function fetchTTSAudio(text: string, maxRetries = 15): Promise<string> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(
@@ -48,23 +48,37 @@ async function fetchTTSAudio(text: string, maxRetries = 10): Promise<string> {
         return URL.createObjectURL(blob);
       }
 
-      // Consume body to avoid leaks
       await response.text();
 
       if (attempt < maxRetries) {
-        // Wait 2-4 seconds before retrying (with jitter)
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
         continue;
       }
     } catch (e) {
       if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
         continue;
       }
       throw e;
     }
   }
   throw new Error("TTS failed after multiple retries");
+}
+
+// Audio prefetch cache: slide index → blob URL
+const audioCache = new Map<number, Promise<string>>();
+
+function prefetchSlideAudio(slides: LessonSlide[], index: number) {
+  if (index < 0 || index >= slides.length) return;
+  if (audioCache.has(index)) return;
+  audioCache.set(index, fetchTTSAudio(slides[index].narration));
+}
+
+function clearAudioCache() {
+  audioCache.forEach((promise) => {
+    promise.then(url => URL.revokeObjectURL(url)).catch(() => {});
+  });
+  audioCache.clear();
 }
 
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
@@ -100,6 +114,11 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     try {
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
+      // Start prefetching first 3 slides immediately
+      clearAudioCache();
+      for (let i = 0; i < Math.min(3, lessonScript.slides.length); i++) {
+        prefetchSlideAudio(lessonScript.slides, i);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to generate video lesson";
       setError(msg);
@@ -109,7 +128,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel, cleanupAudio]);
 
-  // Play narration for current slide using ElevenLabs TTS
+  // Play narration for current slide using prefetched or fresh TTS
   useEffect(() => {
     if (!isPlaying || !script) return;
 
@@ -132,9 +151,16 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       return () => { cancelled = true; clearTimeout(timer); };
     }
 
-    setNarrating(true);
+    // Use cached audio or fetch fresh
+    const audioPromise = audioCache.has(currentSlide)
+      ? audioCache.get(currentSlide)!
+      : fetchTTSAudio(slide.narration);
 
-    fetchTTSAudio(slide.narration)
+    // Prefetch next 2 slides while current plays
+    prefetchSlideAudio(script.slides, currentSlide + 1);
+    prefetchSlideAudio(script.slides, currentSlide + 2);
+
+    audioPromise
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         audioUrlRef.current = url;
