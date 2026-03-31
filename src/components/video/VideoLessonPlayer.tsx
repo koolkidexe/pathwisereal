@@ -4,6 +4,7 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader2, Video, R
 import { Button } from "@/components/ui/button";
 import { generateLessonScript, LessonScript, LessonSlide } from "@/lib/ai-lesson";
 import { toast } from "@/hooks/use-toast";
+import { ExerciseOverlay } from "./ExerciseOverlay";
 
 interface VideoLessonPlayerProps {
   topic: string;
