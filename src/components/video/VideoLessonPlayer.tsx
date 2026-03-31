@@ -151,9 +151,16 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       return () => { cancelled = true; clearTimeout(timer); };
     }
 
-    setNarrating(true);
+    // Use cached audio or fetch fresh
+    const audioPromise = audioCache.has(currentSlide)
+      ? audioCache.get(currentSlide)!
+      : fetchTTSAudio(slide.narration);
 
-    fetchTTSAudio(slide.narration)
+    // Prefetch next 2 slides while current plays
+    prefetchSlideAudio(script.slides, currentSlide + 1);
+    prefetchSlideAudio(script.slides, currentSlide + 2);
+
+    audioPromise
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         audioUrlRef.current = url;
