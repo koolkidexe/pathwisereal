@@ -27,27 +27,21 @@ const VISUAL_COLORS: Record<string, string> = {
   summary: "from-xp/15 to-primary/15",
 };
 
-async function fetchTTSAudio(text: string): Promise<string> {
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tts-narrate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ text }),
-    }
-  );
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: "TTS failed" }));
-    throw new Error(err.error || `TTS failed: ${response.status}`);
+function getBestVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  const priorities = [
+    (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female'),
+    (v: SpeechSynthesisVoice) => v.name.includes('Google US English'),
+    (v: SpeechSynthesisVoice) => /Microsoft.*Online.*Natural/i.test(v.name) && v.lang.startsWith('en'),
+    (v: SpeechSynthesisVoice) => v.name.includes('Google') && v.lang.startsWith('en'),
+    (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && !v.localService,
+    (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
+  ];
+  for (const test of priorities) {
+    const match = voices.find(test);
+    if (match) return match;
   }
-
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
+  return voices[0] || null;
 }
 
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
