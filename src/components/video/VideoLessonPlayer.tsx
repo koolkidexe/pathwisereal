@@ -114,6 +114,11 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     try {
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
+      // Start prefetching first 3 slides immediately
+      clearAudioCache();
+      for (let i = 0; i < Math.min(3, lessonScript.slides.length); i++) {
+        prefetchSlideAudio(lessonScript.slides, i);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to generate video lesson";
       setError(msg);
@@ -123,7 +128,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel, cleanupAudio]);
 
-  // Play narration for current slide using ElevenLabs TTS
+  // Play narration for current slide using prefetched or fresh TTS
   useEffect(() => {
     if (!isPlaying || !script) return;
 
