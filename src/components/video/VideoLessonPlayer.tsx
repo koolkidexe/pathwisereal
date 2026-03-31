@@ -51,28 +51,14 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [narrating, setNarrating] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
-
-  const cleanupAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.removeAttribute("src");
-      audioRef.current = null;
-    }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
-  }, []);
+  const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateVideo = useCallback(async () => {
     setLoading(true);
     setError(null);
     setCurrentSlide(0);
     setScript(null);
-    cleanupAudio();
+    window.speechSynthesis.cancel();
 
     try {
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
@@ -84,81 +70,39 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     } finally {
       setLoading(false);
     }
-  }, [topic, subject, gradeLevel, cleanupAudio]);
+  }, [topic, subject, gradeLevel]);
 
-  // Play narration for current slide using ElevenLabs TTS
+  // Browser TTS narration for current slide
   useEffect(() => {
     if (!isPlaying || !script) return;
 
-    let cancelled = false;
-    cleanupAudio();
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+    window.speechSynthesis.cancel();
 
     const slide = script.slides[currentSlide];
-    if (!slide) return;
+    const advanceSlide = () => {
+      if (currentSlide < script.slides.length - 1) {
+        setCurrentSlide(prev => prev + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    };
 
-    if (muted) {
-      // If muted, auto-advance after delay
-      const timer = setTimeout(() => {
-        if (cancelled) return;
-        if (currentSlide < script.slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          setIsPlaying(false);
-        }
-      }, 4000);
-      return () => { cancelled = true; clearTimeout(timer); };
+    if (!muted && slide && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(slide.narration);
+      const voice = getBestVoice();
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.onend = advanceSlide;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      autoAdvanceRef.current = setTimeout(advanceSlide, 5000);
     }
 
-    setNarrating(true);
-
-    fetchTTSAudio(slide.narration)
-      .then((url) => {
-        if (cancelled) { URL.revokeObjectURL(url); return; }
-        audioUrlRef.current = url;
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.onended = () => {
-          if (cancelled) return;
-          setNarrating(false);
-          if (currentSlide < script.slides.length - 1) {
-            setCurrentSlide(prev => prev + 1);
-          } else {
-            setIsPlaying(false);
-          }
-        };
-        audio.onerror = () => {
-          if (cancelled) return;
-          setNarrating(false);
-          // Fallback: advance after delay
-          setTimeout(() => {
-            if (cancelled) return;
-            if (currentSlide < script.slides.length - 1) {
-              setCurrentSlide(prev => prev + 1);
-            } else {
-              setIsPlaying(false);
-            }
-          }, 3000);
-        };
-        audio.play().catch(() => {});
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setNarrating(false);
-        // Fallback: advance after delay
-        setTimeout(() => {
-          if (cancelled) return;
-          if (currentSlide < script.slides.length - 1) {
-            setCurrentSlide(prev => prev + 1);
-          } else {
-            setIsPlaying(false);
-          }
-        }, 3000);
-      });
-
     return () => {
-      cancelled = true;
-      cleanupAudio();
-      setNarrating(false);
+      window.speechSynthesis.cancel();
+      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
   }, [isPlaying, currentSlide, muted, script, cleanupAudio]);
 
