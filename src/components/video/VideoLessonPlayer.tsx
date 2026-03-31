@@ -55,6 +55,25 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel]);
 
+  // Pick the best available neural voice
+  const getBestVoice = useCallback((): SpeechSynthesisVoice | null => {
+    const voices = window.speechSynthesis.getVoices();
+    // Priority order: Google UK Female, Microsoft neural, any Google voice, first English
+    const priorities = [
+      (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female'),
+      (v: SpeechSynthesisVoice) => v.name.includes('Google US English'),
+      (v: SpeechSynthesisVoice) => /Microsoft.*Online.*Natural/i.test(v.name) && v.lang.startsWith('en'),
+      (v: SpeechSynthesisVoice) => v.name.includes('Google') && v.lang.startsWith('en'),
+      (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && v.localService === false,
+      (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
+    ];
+    for (const test of priorities) {
+      const match = voices.find(test);
+      if (match) return match;
+    }
+    return voices[0] || null;
+  }, []);
+
   // Browser TTS narration for current slide
   useEffect(() => {
     if (!isPlaying || !script) return;
@@ -65,7 +84,9 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     const slide = script.slides[currentSlide];
     if (!muted && slide && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(slide.narration);
-      utterance.rate = 1.0;
+      const voice = getBestVoice();
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.onend = () => {
         if (currentSlide < script.slides.length - 1) {
@@ -89,7 +110,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       window.speechSynthesis.cancel();
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
-  }, [isPlaying, currentSlide, muted, script]);
+  }, [isPlaying, currentSlide, muted, script, getBestVoice]);
 
   const togglePlay = () => {
     if (!script) return;
