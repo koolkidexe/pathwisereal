@@ -312,6 +312,13 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
             <span className="text-xs text-primary font-medium">{narrating ? "SPEAKING" : "LOADING..."}</span>
           </div>
         )}
+
+        {/* Exercise overlay */}
+        <AnimatePresence>
+          {showExercise && slide.exercise && (
+            <ExerciseOverlay exercise={slide.exercise} onComplete={handleExerciseComplete} />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Progress bar */}
