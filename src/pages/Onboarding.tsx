@@ -25,9 +25,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     xp: 0,
     level: 1,
     streak: 0,
-    lastStudyDate: null,
     diagnosticCompleted: false,
-    completedLessons: [],
+    dailyGoalCompleted: false,
   };
 
   const finish = (withDiagnostic: boolean) => {
