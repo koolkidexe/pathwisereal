@@ -27,6 +27,29 @@ const VISUAL_COLORS: Record<string, string> = {
   summary: "from-xp/15 to-primary/15",
 };
 
+async function fetchTTSAudio(text: string): Promise<string> {
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tts-narrate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ text }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: "TTS failed" }));
+    throw new Error(err.error || `TTS failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
   const [script, setScript] = useState<LessonScript | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,16 +57,30 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
+  const [narrating, setNarrating] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+
+  const cleanupAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeAttribute("src");
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
 
   const generateVideo = useCallback(async () => {
     setLoading(true);
     setError(null);
     setCurrentSlide(0);
     setScript(null);
+    cleanupAudio();
 
     try {
-      // Step 1: Generate script
       const lessonScript = await generateLessonScript(topic, subject, gradeLevel);
       setScript(lessonScript);
     } catch (e) {
@@ -53,81 +90,100 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     } finally {
       setLoading(false);
     }
-  }, [topic, subject, gradeLevel]);
+  }, [topic, subject, gradeLevel, cleanupAudio]);
 
-  // Pick the best available neural voice
-  const getBestVoice = useCallback((): SpeechSynthesisVoice | null => {
-    const voices = window.speechSynthesis.getVoices();
-    // Priority order: Google UK Female, Microsoft neural, any Google voice, first English
-    const priorities = [
-      (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female'),
-      (v: SpeechSynthesisVoice) => v.name.includes('Google US English'),
-      (v: SpeechSynthesisVoice) => /Microsoft.*Online.*Natural/i.test(v.name) && v.lang.startsWith('en'),
-      (v: SpeechSynthesisVoice) => v.name.includes('Google') && v.lang.startsWith('en'),
-      (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && v.localService === false,
-      (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
-    ];
-    for (const test of priorities) {
-      const match = voices.find(test);
-      if (match) return match;
-    }
-    return voices[0] || null;
-  }, []);
-
-  // Browser TTS narration for current slide
+  // Play narration for current slide using ElevenLabs TTS
   useEffect(() => {
     if (!isPlaying || !script) return;
 
-    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
-    window.speechSynthesis.cancel();
+    let cancelled = false;
+    cleanupAudio();
 
     const slide = script.slides[currentSlide];
-    if (!muted && slide && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(slide.narration);
-      const voice = getBestVoice();
-      if (voice) utterance.voice = voice;
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      utterance.onend = () => {
+    if (!slide) return;
+
+    if (muted) {
+      // If muted, auto-advance after delay
+      const timer = setTimeout(() => {
+        if (cancelled) return;
         if (currentSlide < script.slides.length - 1) {
           setCurrentSlide(prev => prev + 1);
         } else {
           setIsPlaying(false);
         }
-      };
-      window.speechSynthesis.speak(utterance);
-    } else {
-      autoAdvanceRef.current = setTimeout(() => {
-        if (currentSlide < script.slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          setIsPlaying(false);
-        }
-      }, 5000);
+      }, 4000);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
 
+    setNarrating(true);
+
+    fetchTTSAudio(slide.narration)
+      .then((url) => {
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        audioUrlRef.current = url;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => {
+          if (cancelled) return;
+          setNarrating(false);
+          if (currentSlide < script.slides.length - 1) {
+            setCurrentSlide(prev => prev + 1);
+          } else {
+            setIsPlaying(false);
+          }
+        };
+        audio.onerror = () => {
+          if (cancelled) return;
+          setNarrating(false);
+          // Fallback: advance after delay
+          setTimeout(() => {
+            if (cancelled) return;
+            if (currentSlide < script.slides.length - 1) {
+              setCurrentSlide(prev => prev + 1);
+            } else {
+              setIsPlaying(false);
+            }
+          }, 3000);
+        };
+        audio.play().catch(() => {});
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNarrating(false);
+        // Fallback: advance after delay
+        setTimeout(() => {
+          if (cancelled) return;
+          if (currentSlide < script.slides.length - 1) {
+            setCurrentSlide(prev => prev + 1);
+          } else {
+            setIsPlaying(false);
+          }
+        }, 3000);
+      });
+
     return () => {
-      window.speechSynthesis.cancel();
-      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+      cancelled = true;
+      cleanupAudio();
+      setNarrating(false);
     };
-  }, [isPlaying, currentSlide, muted, script, getBestVoice]);
+  }, [isPlaying, currentSlide, muted, script, cleanupAudio]);
 
   const togglePlay = () => {
     if (!script) return;
     if (isPlaying) {
-      window.speechSynthesis.cancel();
+      cleanupAudio();
     }
     setIsPlaying(!isPlaying);
   };
 
   const nextSlide = () => {
     if (!script) return;
-    window.speechSynthesis.cancel();
+    cleanupAudio();
     if (currentSlide < script.slides.length - 1) setCurrentSlide(prev => prev + 1);
   };
 
   const prevSlide = () => {
-    window.speechSynthesis.cancel();
+    cleanupAudio();
     if (currentSlide > 0) setCurrentSlide(prev => prev - 1);
   };
 
@@ -140,7 +196,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
         </div>
         <h3 className="font-display font-semibold text-lg">AI Video Lesson</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          Generate an AI-narrated video lesson on <span className="text-primary font-medium">"{topic}"</span> taught by a virtual teacher
+          Generate an AI-narrated video lesson on <span className="text-primary font-medium">"{topic}"</span> with a realistic human voice
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button onClick={generateVideo} className="glow-primary-sm">
@@ -207,7 +263,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
                 <motion.div key={i} animate={{ height: [4, 12, 4] }} transition={{ duration: 0.5, delay: i * 0.15, repeat: Infinity }} className="w-1 bg-primary rounded-full" />
               ))}
             </div>
-            <span className="text-xs text-primary font-medium">LIVE</span>
+            <span className="text-xs text-primary font-medium">{narrating ? "SPEAKING" : "LOADING..."}</span>
           </div>
         )}
       </div>
