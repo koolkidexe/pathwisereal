@@ -83,7 +83,7 @@ export const DIAGNOSTIC_QUESTIONS: Question[] = [
   { id: "m5c", subject: "math", topic: "Trigonometry", difficulty: "hard", question: "In a right triangle, if sin(θ) = 3/5, what is cos(θ)?", options: ["3/4", "4/5", "5/3", "4/3"], correctIndex: 1, explanation: "sin²θ + cos²θ = 1 → cos²θ = 1 - 9/25 = 16/25 → cosθ = 4/5" },
   { id: "m5d", subject: "math", topic: "Calculus", difficulty: "hard", question: "What is the derivative of f(x) = x³ + 2x?", options: ["3x² + 2", "x² + 2", "3x + 2", "x³ + 2"], correctIndex: 0, explanation: "f'(x) = 3x² + 2 using the power rule" },
   { id: "m5e", subject: "math", topic: "Logarithms", difficulty: "hard", question: "Solve: log₂(32) = ?", options: ["3", "4", "5", "6"], correctIndex: 2, explanation: "2⁵ = 32, so log₂(32) = 5" },
-  { id: "m5f", subject: "math", topic: "Sequences", difficulty: "hard", question: "What is the sum of the first 10 terms of the arithmetic series 2, 5, 8, 11, ...?", options: ["125", "155", "165", "185"], correctIndex: 2, explanation: "a₁=2, d=3, a₁₀=2+9(3)=29. S = 10/2 × (2+29) = 5 × 31 = 155. Actually S=155." },
+  { id: "m5f", subject: "math", topic: "Sequences", difficulty: "hard", question: "What is the sum of the first 10 terms of the arithmetic series 2, 5, 8, 11, ...?", options: ["125", "155", "165", "185"], correctIndex: 1, explanation: "a₁=2, d=3, a₁₀=29. S = 10/2 × (2+29) = 155" },
 
   // ─── SCIENCE EASY ───
   { id: "s1", subject: "science", topic: "Biology", difficulty: "easy", question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Cytoplasm"], correctIndex: 1, explanation: "Mitochondria generate most of the cell's ATP energy." },

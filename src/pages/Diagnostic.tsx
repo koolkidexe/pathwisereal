@@ -27,7 +27,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
 
   const filteredByDifficulty = relevantQuestions.filter(q => q.difficulty === difficulty);
   const currentQuestion = filteredByDifficulty[currentIndex % Math.max(filteredByDifficulty.length, 1)];
-  const totalToAsk = Math.min(relevantQuestions.length, 10);
+  const totalToAsk = Math.min(relevantQuestions.length, 20);
   const progress = (answers.length / totalToAsk) * 100;
 
   const handleSelect = useCallback((optionIndex: number) => {
