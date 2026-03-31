@@ -90,6 +90,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [narrating, setNarrating] = useState(false);
+  const [showExercise, setShowExercise] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
