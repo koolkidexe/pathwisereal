@@ -201,7 +201,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
                 <motion.div key={i} animate={{ height: [4, 12, 4] }} transition={{ duration: 0.5, delay: i * 0.15, repeat: Infinity }} className="w-1 bg-primary rounded-full" />
               ))}
             </div>
-            <span className="text-xs text-primary font-medium">{narrating ? "SPEAKING" : "LOADING..."}</span>
+            <span className="text-xs text-primary font-medium">SPEAKING</span>
           </div>
         )}
       </div>
