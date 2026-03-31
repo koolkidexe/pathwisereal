@@ -27,7 +27,7 @@ const VISUAL_COLORS: Record<string, string> = {
   summary: "from-xp/15 to-primary/15",
 };
 
-async function fetchTTSAudio(text: string, maxRetries = 10): Promise<string> {
+async function fetchTTSAudio(text: string, maxRetries = 15): Promise<string> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(
@@ -48,23 +48,37 @@ async function fetchTTSAudio(text: string, maxRetries = 10): Promise<string> {
         return URL.createObjectURL(blob);
       }
 
-      // Consume body to avoid leaks
       await response.text();
 
       if (attempt < maxRetries) {
-        // Wait 2-4 seconds before retrying (with jitter)
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
         continue;
       }
     } catch (e) {
       if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
         continue;
       }
       throw e;
     }
   }
   throw new Error("TTS failed after multiple retries");
+}
+
+// Audio prefetch cache: slide index → blob URL
+const audioCache = new Map<number, Promise<string>>();
+
+function prefetchSlideAudio(slides: LessonSlide[], index: number) {
+  if (index < 0 || index >= slides.length) return;
+  if (audioCache.has(index)) return;
+  audioCache.set(index, fetchTTSAudio(slides[index].narration));
+}
+
+function clearAudioCache() {
+  audioCache.forEach((promise) => {
+    promise.then(url => URL.revokeObjectURL(url)).catch(() => {});
+  });
+  audioCache.clear();
 }
 
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
