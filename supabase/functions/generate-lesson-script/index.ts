@@ -24,7 +24,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an expert educational content creator for students. Generate a structured video lesson script.
+    const systemPrompt = `You are an expert educational content creator for students. Generate a structured video lesson script with exercise checkpoints.
 
 IMPORTANT: Return ONLY valid JSON with NO markdown formatting, NO code blocks, NO backticks. Just raw JSON.
 
@@ -36,19 +36,30 @@ Return a JSON object with this structure:
       "heading": "Slide heading",
       "content": "2-3 sentence explanation for this slide",
       "narration": "What the AI teacher would say for this slide (3-5 sentences, conversational and engaging)",
-      "visualType": "concept" | "example" | "diagram" | "summary" | "intro"
+      "visualType": "concept" | "example" | "diagram" | "summary" | "intro",
+      "exercise": null
     }
   ]
 }
 
+For exactly 2 slides (not the first or last), add an exercise checkpoint. Set the "exercise" field to:
+{
+  "question": "A question testing understanding of this slide's content",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctIndex": 0
+}
+The correctIndex is the 0-based index of the correct option.
+
 Guidelines:
-- Create exactly 5-7 slides
+- Create exactly 6-8 slides
 - First slide should be an engaging introduction
 - Last slide should be a summary/recap
+- Place exercises after concept or example slides (never on intro or summary)
 - Narration should be warm, encouraging, and age-appropriate for grade ${gradeLevel || "9"}
 - Each slide's narration should be 20-40 words (for ~10-15 seconds of speech)
 - Make it feel like a real teacher explaining to a student
-- Use simple, clear language`;
+- Use simple, clear language
+- Exercise questions should directly test what was just taught`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

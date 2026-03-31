@@ -4,6 +4,7 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader2, Video, R
 import { Button } from "@/components/ui/button";
 import { generateLessonScript, LessonScript, LessonSlide } from "@/lib/ai-lesson";
 import { toast } from "@/hooks/use-toast";
+import { ExerciseOverlay } from "./ExerciseOverlay";
 
 interface VideoLessonPlayerProps {
   topic: string;
@@ -89,6 +90,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [narrating, setNarrating] = useState(false);
+  const [showExercise, setShowExercise] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
@@ -128,9 +130,29 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     }
   }, [topic, subject, gradeLevel, cleanupAudio]);
 
+  // Try to advance to next slide, but pause for exercise if present
+  const advanceSlide = useCallback((slide: LessonSlide) => {
+    if (slide.exercise) {
+      setIsPlaying(false);
+      setShowExercise(true);
+    } else if (script && currentSlide < script.slides.length - 1) {
+      setCurrentSlide(prev => prev + 1);
+    } else {
+      setIsPlaying(false);
+    }
+  }, [script, currentSlide]);
+
+  const handleExerciseComplete = useCallback(() => {
+    setShowExercise(false);
+    if (script && currentSlide < script.slides.length - 1) {
+      setCurrentSlide(prev => prev + 1);
+      setIsPlaying(true);
+    }
+  }, [script, currentSlide]);
+
   // Play narration for current slide using prefetched or fresh TTS
   useEffect(() => {
-    if (!isPlaying || !script) return;
+    if (!isPlaying || !script || showExercise) return;
 
     let cancelled = false;
     cleanupAudio();
@@ -139,14 +161,9 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
     if (!slide) return;
 
     if (muted) {
-      // If muted, auto-advance after delay
       const timer = setTimeout(() => {
         if (cancelled) return;
-        if (currentSlide < script.slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          setIsPlaying(false);
-        }
+        advanceSlide(slide);
       }, 4000);
       return () => { cancelled = true; clearTimeout(timer); };
     }
@@ -169,23 +186,14 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
         audio.onended = () => {
           if (cancelled) return;
           setNarrating(false);
-          if (currentSlide < script.slides.length - 1) {
-            setCurrentSlide(prev => prev + 1);
-          } else {
-            setIsPlaying(false);
-          }
+          advanceSlide(slide);
         };
         audio.onerror = () => {
           if (cancelled) return;
           setNarrating(false);
-          // Fallback: advance after delay
           setTimeout(() => {
             if (cancelled) return;
-            if (currentSlide < script.slides.length - 1) {
-              setCurrentSlide(prev => prev + 1);
-            } else {
-              setIsPlaying(false);
-            }
+            advanceSlide(slide);
           }, 3000);
         };
         audio.play().catch(() => {});
@@ -193,14 +201,9 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       .catch(() => {
         if (cancelled) return;
         setNarrating(false);
-        // Fallback: advance after delay
         setTimeout(() => {
           if (cancelled) return;
-          if (currentSlide < script.slides.length - 1) {
-            setCurrentSlide(prev => prev + 1);
-          } else {
-            setIsPlaying(false);
-          }
+          advanceSlide(slide);
         }, 3000);
       });
 
@@ -209,7 +212,7 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       cleanupAudio();
       setNarrating(false);
     };
-  }, [isPlaying, currentSlide, muted, script, cleanupAudio]);
+  }, [isPlaying, currentSlide, muted, script, cleanupAudio, showExercise, advanceSlide]);
 
   const togglePlay = () => {
     if (!script) return;
@@ -309,6 +312,13 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
             <span className="text-xs text-primary font-medium">{narrating ? "SPEAKING" : "LOADING..."}</span>
           </div>
         )}
+
+        {/* Exercise overlay */}
+        <AnimatePresence>
+          {showExercise && slide.exercise && (
+            <ExerciseOverlay exercise={slide.exercise} onComplete={handleExerciseComplete} />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Progress bar */}

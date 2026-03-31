@@ -1,10 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface SlideExercise {
+  question: string;
+  options: string[];
+  correctIndex: number;
+}
+
 export interface LessonSlide {
   heading: string;
   content: string;
   narration: string;
   visualType: "concept" | "example" | "diagram" | "summary" | "intro";
+  exercise?: SlideExercise | null;
 }
 
 export interface LessonScript {
