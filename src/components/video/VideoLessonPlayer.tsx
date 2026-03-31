@@ -27,27 +27,44 @@ const VISUAL_COLORS: Record<string, string> = {
   summary: "from-xp/15 to-primary/15",
 };
 
-async function fetchTTSAudio(text: string): Promise<string> {
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tts-narrate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ text }),
+async function fetchTTSAudio(text: string, maxRetries = 10): Promise<string> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tts-narrate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      }
+
+      // Consume body to avoid leaks
+      await response.text();
+
+      if (attempt < maxRetries) {
+        // Wait 2-4 seconds before retrying (with jitter)
+        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        continue;
+      }
+    } catch (e) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+        continue;
+      }
+      throw e;
     }
-  );
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: "TTS failed" }));
-    throw new Error(err.error || `TTS failed: ${response.status}`);
   }
-
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
+  throw new Error("TTS failed after multiple retries");
 }
 
 export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPlayerProps) {
