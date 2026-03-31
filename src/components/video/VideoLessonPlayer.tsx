@@ -104,24 +104,24 @@ export function VideoLessonPlayer({ topic, subject, gradeLevel }: VideoLessonPla
       window.speechSynthesis.cancel();
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
-  }, [isPlaying, currentSlide, muted, script, cleanupAudio]);
+  }, [isPlaying, currentSlide, muted, script]);
 
   const togglePlay = () => {
     if (!script) return;
     if (isPlaying) {
-      cleanupAudio();
+      window.speechSynthesis.cancel();
     }
     setIsPlaying(!isPlaying);
   };
 
   const nextSlide = () => {
     if (!script) return;
-    cleanupAudio();
+    window.speechSynthesis.cancel();
     if (currentSlide < script.slides.length - 1) setCurrentSlide(prev => prev + 1);
   };
 
   const prevSlide = () => {
-    cleanupAudio();
+    window.speechSynthesis.cancel();
     if (currentSlide > 0) setCurrentSlide(prev => prev - 1);
   };
 
