@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +24,8 @@ serve(async (req) => {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
 
-    const selectedVoice = voiceId || "EXAVITQu4vr4xnSDxMaL"; // Sarah - warm female voice
+    // Sarah - warm female voice, great for teaching
+    const selectedVoice = voiceId || "EXAVITQu4vr4xnSDxMaL";
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice}?output_format=mp3_44100_128`,
@@ -37,9 +37,9 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_turbo_v2_5",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.6,
+            stability: 0.5,
             similarity_boost: 0.75,
             style: 0.3,
             use_speaker_boost: true,
@@ -54,10 +54,10 @@ serve(async (req) => {
       console.error("ElevenLabs error:", response.status, errText);
 
       if (response.status === 401) {
-        throw new Error("ElevenLabs API key is invalid");
+        throw new Error("ElevenLabs API key is invalid. Please reconnect in Settings → Connectors.");
       }
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "ElevenLabs rate limit exceeded. Try again shortly." }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again shortly." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -65,11 +65,14 @@ serve(async (req) => {
       throw new Error(`ElevenLabs API error: ${response.status}`);
     }
 
+    // Return raw audio binary for best playback
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(audioBuffer);
 
-    return new Response(JSON.stringify({ audioContent: audioBase64 }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(audioBuffer, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "audio/mpeg",
+      },
     });
   } catch (e) {
     console.error("tts-narrate error:", e);
