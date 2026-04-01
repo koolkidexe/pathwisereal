@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          coins: number
+          created_at: string
+          daily_goal_completed: boolean
+          diagnostic_completed: boolean
+          grade_level: string
+          id: string
+          last_streak_date: string | null
+          level: number
+          streak: number
+          subjects: string[]
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          daily_goal_completed?: boolean
+          diagnostic_completed?: boolean
+          grade_level?: string
+          id: string
+          last_streak_date?: string | null
+          level?: number
+          streak?: number
+          subjects?: string[]
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          daily_goal_completed?: boolean
+          diagnostic_completed?: boolean
+          grade_level?: string
+          id?: string
+          last_streak_date?: string | null
+          level?: number
+          streak?: number
+          subjects?: string[]
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

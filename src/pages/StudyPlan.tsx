@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { SAMPLE_TOPICS } from "@/lib/data";
 import { SUBJECTS } from "@/lib/constants";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 import { ChevronRight, BookOpen, CheckCircle2, Circle, Lock, Map } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";

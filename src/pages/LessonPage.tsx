@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SAMPLE_TOPICS, Question } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, HelpCircle, Lightbulb, BookOpen, Brain, Video } from "lucide-react";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 import { VideoLessonPlayer } from "@/components/video/VideoLessonPlayer";
 import { SUBJECTS } from "@/lib/constants";
 

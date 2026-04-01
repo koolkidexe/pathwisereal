@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { DIAGNOSTIC_QUESTIONS, Question, DiagnosticResult } from "@/lib/data";
 import { SUBJECTS } from "@/lib/constants";
 import { Brain, CheckCircle2, XCircle, ArrowRight, BarChart3 } from "lucide-react";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 
 interface DiagnosticProps {
   profile: UserProfile;

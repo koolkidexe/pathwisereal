@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 import { SAMPLE_BADGES } from "@/lib/data";
 import { SUBJECTS } from "@/lib/constants";
 import { TrendingUp, Calendar, Award, Target, Flame, Zap, BarChart3 } from "lucide-react";

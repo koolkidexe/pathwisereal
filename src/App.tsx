@@ -4,11 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useUserProfile } from "@/lib/store";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LevelUpOverlay } from "@/components/gamification/LevelUpOverlay";
 import { LEVEL_TITLES } from "@/lib/constants";
 import { useState, useEffect, useRef } from "react";
+import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Diagnostic from "./pages/Diagnostic";
@@ -20,11 +21,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function AuthenticatedLayout({ profile, updateProfile }: { profile: any; updateProfile: any }) {
+function AuthenticatedLayout() {
+  const { profile, updateProfile } = useAuth();
   const [showLevelUp, setShowLevelUp] = useState(false);
   const prevLevel = useRef(profile.level);
 
-  // Compute level from XP
   useEffect(() => {
     const newLevel = Math.floor(profile.xp / 500) + 1;
     if (newLevel !== profile.level) {
@@ -65,7 +66,23 @@ function AuthenticatedLayout({ profile, updateProfile }: { profile: any; updateP
 }
 
 function AppRoutes() {
-  const { profile, updateProfile, isOnboarded } = useUserProfile();
+  const { session, profile, updateProfile, isOnboarded, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="*" element={<Auth />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
@@ -78,7 +95,7 @@ function AppRoutes() {
         element={isOnboarded ? <Navigate to="/dashboard" replace /> : <Onboarding onComplete={updateProfile} />}
       />
       {isOnboarded ? (
-        <Route path="/*" element={<AuthenticatedLayout profile={profile} updateProfile={updateProfile} />} />
+        <Route path="/*" element={<AuthenticatedLayout />} />
       ) : (
         <Route path="*" element={<Navigate to="/onboarding" replace />} />
       )}
@@ -92,7 +109,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppRoutes />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

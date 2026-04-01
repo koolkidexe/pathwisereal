@@ -1,7 +1,7 @@
-import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap } from "lucide-react";
+import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap, Coins } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 import { LEVEL_TITLES } from "@/lib/constants";
 import {
   Sidebar,
@@ -53,7 +53,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
         {/* Stats mini */}
         {!collapsed && (
           <div className="px-4 pb-3 space-y-2">
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-3 text-xs flex-wrap">
               <div className="flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-streak" />
                 <span className="font-semibold">{profile.streak}</span>
@@ -61,6 +61,10 @@ export function AppSidebar({ profile }: AppSidebarProps) {
               <div className="flex items-center gap-1">
                 <Zap className="w-3.5 h-3.5 text-primary" />
                 <span className="font-semibold">{profile.xp} XP</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Coins className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-semibold">{profile.coins ?? 0}</span>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">Lvl {profile.level} • {title}</p>
