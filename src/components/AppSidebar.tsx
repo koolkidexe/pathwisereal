@@ -30,9 +30,11 @@ interface AppSidebarProps {
 
 export function AppSidebar({ profile }: AppSidebarProps) {
   const { state } = useSidebar();
+  const { signOut } = useAuth();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const title = LEVEL_TITLES[Math.min(profile.level - 1, LEVEL_TITLES.length - 1)];
+  const navItems = allNavItems.filter(item => !(item.hideWhenDiagnosticDone && profile.diagnosticCompleted));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
