@@ -6,7 +6,7 @@ import { SubjectsStep } from "@/components/onboarding/SubjectsStep";
 import { DiagnosticStep } from "@/components/onboarding/DiagnosticStep";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Diagnostic from "./Diagnostic";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 
 interface OnboardingProps {
   onComplete: (updates: Partial<UserProfile>) => void;
@@ -25,6 +25,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     xp: 0,
     level: 1,
     streak: 0,
+    coins: 0,
+    lastStreakDate: null,
     diagnosticCompleted: false,
     dailyGoalCompleted: false,
   };
