@@ -1,7 +1,7 @@
 import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { UserProfile } from "@/lib/store";
+import { UserProfile } from "@/contexts/AuthContext";
 import { LEVEL_TITLES } from "@/lib/constants";
 import {
   Sidebar,
