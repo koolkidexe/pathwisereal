@@ -1,8 +1,9 @@
-import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap, Coins } from "lucide-react";
+import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap, Coins, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { UserProfile } from "@/contexts/AuthContext";
+import { UserProfile, useAuth } from "@/contexts/AuthContext";
 import { LEVEL_TITLES } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -15,12 +16,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Study Plan", url: "/study-plan", icon: Map },
-  { title: "All Material", url: "/material", icon: BookOpen },
-  { title: "Diagnostic", url: "/diagnostic", icon: Brain },
-  { title: "Progress", url: "/progress", icon: BarChart3 },
+const allNavItems = [
+  { title: "Dashboard", url: "/dashboard", icon: Home, requiresDiagnostic: false },
+  { title: "Study Plan", url: "/study-plan", icon: Map, requiresDiagnostic: false },
+  { title: "All Material", url: "/material", icon: BookOpen, requiresDiagnostic: false },
+  { title: "Diagnostic", url: "/diagnostic", icon: Brain, hideWhenDiagnosticDone: true, requiresDiagnostic: false },
+  { title: "Progress", url: "/progress", icon: BarChart3, requiresDiagnostic: false },
 ];
 
 interface AppSidebarProps {
@@ -29,9 +30,11 @@ interface AppSidebarProps {
 
 export function AppSidebar({ profile }: AppSidebarProps) {
   const { state } = useSidebar();
+  const { signOut } = useAuth();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const title = LEVEL_TITLES[Math.min(profile.level - 1, LEVEL_TITLES.length - 1)];
+  const navItems = allNavItems.filter(item => !(item.hideWhenDiagnosticDone && profile.diagnosticCompleted));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -93,6 +96,19 @@ export function AppSidebar({ profile }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Logout */}
+        <div className="mt-auto p-3">
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "default"}
+            className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span className="ml-2">Log out</span>}
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
