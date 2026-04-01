@@ -96,6 +96,19 @@ export function AppSidebar({ profile }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Logout */}
+        <div className="mt-auto p-3">
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "default"}
+            className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span className="ml-2">Log out</span>}
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
