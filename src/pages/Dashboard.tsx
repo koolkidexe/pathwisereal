@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Play, Map, BookOpen, ArrowRight } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Play, Map, BookOpen, ArrowRight, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { XPBar } from "@/components/dashboard/XPBar";
 import { DailyMissions } from "@/components/dashboard/DailyMissions";
-import { UserProfile } from "@/lib/store";
+import { StreakReward } from "@/components/dashboard/StreakReward";
+import { useAuth, UserProfile } from "@/contexts/AuthContext";
 import { SUBJECTS } from "@/lib/constants";
 
 interface DashboardProps {
@@ -13,6 +14,7 @@ interface DashboardProps {
 
 export default function Dashboard({ profile }: DashboardProps) {
   const navigate = useNavigate();
+  const { updateProfile, signOut } = useAuth();
   const selectedSubjects = SUBJECTS.filter((s) => profile.subjects.includes(s.value));
 
   const container = {
@@ -22,6 +24,15 @@ export default function Dashboard({ profile }: DashboardProps) {
   const item = {
     hidden: { opacity: 0, y: 16 },
     show: { opacity: 1, y: 0 },
+  };
+
+  const handleStreakClaim = async (newStreak: number, coinsEarned: number) => {
+    const today = new Date().toISOString().split("T")[0];
+    await updateProfile({
+      streak: newStreak,
+      coins: profile.coins + coinsEarned,
+      lastStreakDate: today,
+    });
   };
 
   return (
@@ -41,11 +52,24 @@ export default function Dashboard({ profile }: DashboardProps) {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Welcome back! Let's keep learning.</p>
           </div>
+          <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
+            <LogOut className="w-5 h-5" />
+          </Button>
         </motion.div>
 
         {/* XP Bar */}
         <motion.div variants={item}>
           <XPBar xp={profile.xp} level={profile.level} streak={profile.streak} />
+        </motion.div>
+
+        {/* Streak Reward */}
+        <motion.div variants={item}>
+          <StreakReward
+            streak={profile.streak}
+            coins={profile.coins}
+            lastStreakDate={profile.lastStreakDate}
+            onClaim={handleStreakClaim}
+          />
         </motion.div>
 
         {/* Quick Actions */}
