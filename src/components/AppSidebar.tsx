@@ -1,4 +1,4 @@
-import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap } from "lucide-react";
+import { Home, Map, BookOpen, BarChart3, Brain, Flame, Zap, Coins } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { UserProfile } from "@/contexts/AuthContext";
