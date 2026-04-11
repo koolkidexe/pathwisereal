@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!user) return;
 
-    const dbUpdates: Record<string, unknown> = {};
+    const dbUpdates: { [key: string]: string | number | boolean | string[] | null } = {};
     if (updates.gradeLevel !== undefined) dbUpdates.grade_level = updates.gradeLevel;
     if (updates.subjects !== undefined) dbUpdates.subjects = updates.subjects;
     if (updates.diagnosticCompleted !== undefined) dbUpdates.diagnostic_completed = updates.diagnosticCompleted;
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.dailyGoalCompleted !== undefined) dbUpdates.daily_goal_completed = updates.dailyGoalCompleted;
     dbUpdates.updated_at = new Date().toISOString();
 
-    await supabase.from("profiles").update(dbUpdates).eq("id", user.id);
+    await supabase.from("profiles").update(dbUpdates as any).eq("id", user.id);
   }, [profile, user]);
 
   const signOut = useCallback(async () => {
