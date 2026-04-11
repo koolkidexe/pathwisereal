@@ -24,6 +24,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
 
   const filteredByDifficulty = relevantQuestions.filter(q => q.difficulty === difficulty);
   const currentQuestion = filteredByDifficulty[currentIndex % Math.max(filteredByDifficulty.length, 1)];
