@@ -24,6 +24,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
 
   const filteredByDifficulty = relevantQuestions.filter(q => q.difficulty === difficulty);
   const currentQuestion = filteredByDifficulty[currentIndex % Math.max(filteredByDifficulty.length, 1)];
@@ -31,7 +32,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
   const progress = (answers.length / totalToAsk) * 100;
 
   const handleSelect = useCallback((optionIndex: number) => {
-    if (showExplanation) return;
+    if (showExplanation || transitioning) return;
     setSelectedOption(optionIndex);
     setShowExplanation(true);
     const correct = optionIndex === currentQuestion.correctIndex;
@@ -48,7 +49,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
       if (consecutiveWrong >= 1 && difficulty === "hard") setDifficulty("medium");
       else if (consecutiveWrong >= 1 && difficulty === "medium") setDifficulty("easy");
     }
-  }, [showExplanation, currentQuestion, consecutiveCorrect, consecutiveWrong, difficulty]);
+  }, [showExplanation, transitioning, currentQuestion, consecutiveCorrect, consecutiveWrong, difficulty]);
 
   const handleNext = () => {
     if (answers.length >= totalToAsk) {
@@ -56,9 +57,11 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
       updateProfile({ diagnosticCompleted: true, xp: profile.xp + 50 });
       return;
     }
+    setTransitioning(true);
     setSelectedOption(null);
     setShowExplanation(false);
     setCurrentIndex(prev => prev + 1);
+    setTimeout(() => setTransitioning(false), 400);
   };
 
   const getResults = (): DiagnosticResult[] => {
