@@ -26,13 +26,19 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
 
-  const filteredByDifficulty = relevantQuestions.filter(q => q.difficulty === difficulty);
-  const currentQuestion = filteredByDifficulty[currentIndex % Math.max(filteredByDifficulty.length, 1)];
+  const getQuestionForStep = (level: "easy" | "medium" | "hard", index: number): Question | null => {
+    const questionsAtLevel = relevantQuestions.filter(q => q.difficulty === level);
+    return questionsAtLevel[index % Math.max(questionsAtLevel.length, 1)] ?? null;
+  };
+
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(() =>
+    getQuestionForStep("easy", 0)
+  );
   const totalToAsk = Math.min(relevantQuestions.length, 20);
   const progress = (answers.length / totalToAsk) * 100;
 
   const handleSelect = useCallback((optionIndex: number) => {
-    if (showExplanation || transitioning) return;
+    if (!currentQuestion || showExplanation || transitioning) return;
     setSelectedOption(optionIndex);
     setShowExplanation(true);
     const correct = optionIndex === currentQuestion.correctIndex;
@@ -58,10 +64,12 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
       updateProfile({ diagnosticCompleted: true, xp: profile.xp + 50 });
       return;
     }
+    const nextIndex = currentIndex + 1;
     setTransitioning(true);
     setSelectedOption(null);
     setShowExplanation(false);
-    setCurrentIndex(prev => prev + 1);
+    setCurrentIndex(nextIndex);
+    setCurrentQuestion(getQuestionForStep(difficulty, nextIndex));
     setTimeout(() => setTransitioning(false), 600);
   };
 
