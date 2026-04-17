@@ -52,6 +52,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
   }, [showExplanation, transitioning, currentQuestion, consecutiveCorrect, consecutiveWrong, difficulty]);
 
   const handleNext = () => {
+    if (transitioning) return;
     if (answers.length >= totalToAsk) {
       setFinished(true);
       updateProfile({ diagnosticCompleted: true, xp: profile.xp + 50 });
@@ -61,7 +62,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
     setSelectedOption(null);
     setShowExplanation(false);
     setCurrentIndex(prev => prev + 1);
-    setTimeout(() => setTransitioning(false), 400);
+    setTimeout(() => setTransitioning(false), 600);
   };
 
   const getResults = (): DiagnosticResult[] => {
