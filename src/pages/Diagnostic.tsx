@@ -159,7 +159,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
         </div>
         <Progress value={progress} className="h-2" />
         <AnimatePresence mode="wait">
-          <motion.div key={currentQuestion.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} className="glass rounded-xl p-6 space-y-5">
+          <motion.div key={currentQuestion.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }} className={`glass rounded-xl p-6 space-y-5 ${transitioning ? "pointer-events-none" : ""}`}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{SUBJECTS.find(s => s.value === currentQuestion.subject)?.label}</span>
               <span>•</span>
@@ -175,7 +175,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
                   else style = "border-border/30 bg-muted/20 opacity-50";
                 } else if (i === selectedOption) style = "border-primary bg-primary/10";
                 return (
-                  <motion.button key={i} whileHover={!showExplanation ? { scale: 1.01 } : {}} whileTap={!showExplanation ? { scale: 0.99 } : {}} onClick={() => handleSelect(i)} className={`w-full text-left p-4 rounded-lg border transition-all flex items-center gap-3 ${style}`}>
+                  <motion.button key={i} type="button" disabled={showExplanation || transitioning} whileHover={!showExplanation ? { scale: 1.01 } : {}} whileTap={!showExplanation ? { scale: 0.99 } : {}} onClick={() => handleSelect(i)} className={`w-full text-left p-4 rounded-lg border transition-all flex items-center gap-3 ${style} disabled:cursor-default`}>
                     <span className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-sm font-medium shrink-0">{String.fromCharCode(65 + i)}</span>
                     <span className="text-sm">{option}</span>
                     {showExplanation && i === currentQuestion.correctIndex && <CheckCircle2 className="w-5 h-5 text-xp ml-auto shrink-0" />}
@@ -190,7 +190,7 @@ export default function Diagnostic({ profile, updateProfile }: DiagnosticProps) 
               </motion.div>
             )}
             {showExplanation && (
-              <Button className="w-full h-11 font-semibold" onClick={handleNext}>
+              <Button type="button" disabled={transitioning} className="w-full h-11 font-semibold" onClick={handleNext}>
                 {answers.length >= totalToAsk ? "See Results" : "Next Question"} <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             )}
